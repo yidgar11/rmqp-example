@@ -1,49 +1,60 @@
-import pika, logging, sys, argparse
+import pika
+import logging
+import sys
+import argparse
 from argparse import RawTextHelpFormatter
 from time import sleep
 
 if __name__ == '__main__':
-    examples = sys.argv[0] + " -p 5672 -s rabbitmq -m 'Hello' "
-    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter,
-                                 description='Run producer.py',
-                                 epilog=examples)
-    parser.add_argument('-p', '--port', action='store', dest='port', help='The port to listen on.')
-    parser.add_argument('-s', '--server', action='store', dest='server', help='The RabbitMQ server.')
-    parser.add_argument('-m', '--message', action='store', dest='message', help='The message to send', required=False, default='Hello')
-    parser.add_argument('-r', '--repeat', action='store', dest='repeat', help='Number of times to repeat the message', required=False, default='30')
+    examples = f"{sys.argv[0]} -p 5672 -s rabbitmq -m 'Hello'"
+
+    parser = argparse.ArgumentParser(
+        formatter_class=RawTextHelpFormatter,
+        description="Run producer.py",
+        epilog=examples
+    )
+    parser.add_argument('-p', '--port', required=True, help="The port to listen on.")
+    parser.add_argument('-s', '--server', required=True, help="The RabbitMQ server.")
+    parser.add_argument('-m', '--message', default='Hello', help="The message to send.")
+    parser.add_argument('-r', '--repeat', type=int, default=30, help="Number of times to repeat the message.")
 
     args = parser.parse_args()
-    if args.port == None:
-        print "Missing required argument: -p/--port"
-        sys.exit(1)
-    if args.server == None:
-        print "Missing required argument: -s/--server"
-        sys.exit(1)
 
-    # sleep a few seconds to allow RabbitMQ server to come up
+    # Sleep to allow RabbitMQ to start
     sleep(5)
 
+    # Configure logging
     logging.basicConfig(level=logging.INFO)
     LOG = logging.getLogger(__name__)
+
+    # RabbitMQ connection parameters
     credentials = pika.PlainCredentials('guest', 'guest')
-    parameters = pika.ConnectionParameters(args.server,
-                                           int(args.port),
-                                           '/',
-                                           credentials)
+    parameters = pika.ConnectionParameters(
+        host=args.server,
+        port=int(args.port),
+        virtual_host='/',
+        credentials=credentials
+    )
+
+    # Establish connection
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
-    q = channel.queue_declare('pc')
-    q_name = q.method.queue
 
-    # Turn on delivery confirmations
+    # Declare the queue
+    queue = channel.queue_declare(queue='pc')
+    queue_name = queue.method.queue
+
+    # Enable delivery confirmation
     channel.confirm_delivery()
 
-    for i in range(0, int(args.repeat)):
-        if channel.basic_publish('', q_name, args.message):
-            LOG.info('Message has been delivered')
+    # Publish messages
+    for i in range(args.repeat):
+        if channel.basic_publish(exchange='', routing_key=queue_name, body=args.message):
+            LOG.info(f"Message {i+1} delivered: {args.message}")
         else:
-            LOG.warning('Message NOT delivered')
+            LOG.warning(f"Message {i+1} NOT delivered!")
 
         sleep(2)
 
     connection.close()
+    LOG.info("Connection closed.")
