@@ -4,11 +4,15 @@ import sys
 import argparse
 from argparse import RawTextHelpFormatter
 from time import sleep
+from datetime import datetime
 
 def on_message(channel, method_frame, header_frame, body):
     """ Callback function to process received messages """
-    print(f"Received Message: {body.decode('utf-8')}")
-    LOG.info('Message has been received: %s', body.decode('utf-8'))
+
+    received_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    print(f"{received_time} - Received Message: {body.decode('utf-8')}")
+    LOG.info(f'{received_time} Message has been received: %s', body.decode('utf-8'))
     channel.basic_ack(delivery_tag=method_frame.delivery_tag)
 
 
