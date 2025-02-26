@@ -30,7 +30,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Sleep to allow RabbitMQ to start
-    sleep(5)
+    sleep(30)
 
     # Configure logging
     logging.basicConfig(level=logging.INFO)

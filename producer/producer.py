@@ -4,6 +4,7 @@ import sys
 import argparse
 from argparse import RawTextHelpFormatter
 from time import sleep
+from datetime import datetime
 
 if __name__ == '__main__':
     examples = f"{sys.argv[0]} -p 5672 -s rabbitmq -m 'Hello'"
@@ -21,7 +22,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Sleep to allow RabbitMQ to start
-    sleep(5)
+    sleep(30)
 
     # Configure logging
     logging.basicConfig(level=logging.INFO)
@@ -49,7 +50,9 @@ if __name__ == '__main__':
 
     # Publish messages
     for i in range(args.repeat):
-        if channel.basic_publish(exchange='', routing_key=queue_name, body=args.message):
+        send_time = datetime.now().strftime('%H:%M:%S')
+        message = f"[{send_time}]-args.message"
+        if channel.basic_publish(exchange='', routing_key=queue_name, body=message):
             LOG.info(f"Message {i+1} delivered: {args.message}")
         else:
             LOG.warning(f"Message {i+1} NOT delivered!")
