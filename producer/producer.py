@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Publish messages
     for i in range(args.repeat):
         send_time = datetime.now().strftime('%H:%M:%S')
-        message = f"[{send_time}]-args.message"
+        message = f"[{send_time}]-{args.message}"
         if channel.basic_publish(exchange='', routing_key=queue_name, body=message):
             LOG.info(f"Message {i+1} delivered: {args.message}")
         else:

@@ -52,7 +52,6 @@ if __name__ == '__main__':
     # Declare the queue
     channel.queue_declare(queue='pc')
 
-    # Fix: Correct argument order for basic_consume
     channel.basic_consume(queue='pc', on_message_callback=on_message)
 
     try:
